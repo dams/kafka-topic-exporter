@@ -4,6 +4,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import java.util.Collections;
 import java.util.List;
 import io.prometheus.client.Collector;
 import io.prometheus.client.Collector.MetricFamilySamples;
@@ -53,12 +54,12 @@ public class KafkaCollectorTest extends TestCase
     public void testReplaceValueWithSameLabel() throws IOException {
         KafkaCollector collector = new KafkaCollector(emptyConfig);
 
-        final String logRecord1 = "{\"name\":\"foo\", \"tags\": { \"label1\": \"v1\", \"lable2\": \"v2\" }, \"fields\": { \"value\": 9 } }";
-        final String logRecord2 = "{\"name\":\"foo\", \"tags\": { \"label1\": \"aa1\", \"lable2\": \"bb2\" }, \"fields\": { \"value\": 10 } }";
-        final String logRecord3 = "{\"name\":\"foo\", \"tags\": { \"label1\": \"v1\", \"lable2\": \"v2\" }, \"fields\": { \"value\": 18 } }";
+        final String logRecord1 = "{\"name\":\"foo\", \"tags\": { \"label1\": \"v1\", \"lable2\": \"v2\" }, \"fields\": { \"value\": 9 }, \"timestamp\": 123456 }";
+        final String logRecord2 = "{\"name\":\"foo\", \"tags\": { \"label1\": \"aa1\", \"lable2\": \"bb2\" }, \"fields\": { \"value\": 10 }, \"timestamp\": 123457 }";
+        final String logRecord3 = "{\"name\":\"foo\", \"tags\": { \"label1\": \"v1\", \"lable2\": \"v2\" }, \"fields\": { \"value\": 18 }, \"timestamp\": 123458 }";
 
         final String topic = "test.hoge";
-        KafkaExporterLogEntry jsonRecord = mapper.readValue(logRecord3, KafkaExporterLogEntry.class);
+        KafkaExporterLogEntry jsonRecord = mapper.readValue(logRecord2, KafkaExporterLogEntry.class);
         
         collector.add(topic, logRecord1);
         collector.add(topic, logRecord2);
@@ -66,10 +67,14 @@ public class KafkaCollectorTest extends TestCase
         List<MyCollector.MetricFamilySamples> mfsList = collector.collect();
         MyCollector.MetricFamilySamples mfs = mfsList.get(0);
         List<MyCollector.MetricFamilySamples.Sample> samples = mfs.samples;
+        Collections.sort(samples, (left, right) -> (
+                (left.timestamp < right.timestamp) ? -1 : ( (left.timestamp > right.timestamp) ? 1 : 0 )
+        ));
 
-        assertEquals(2, samples.size());
+
+        assertEquals(3, samples.size());
         assertEquals(jsonRecord.getTags(), MetricUtil.getLabelMapFromSample(samples.get(1)));
-        assertEquals(18.0, samples.get(1).value);
+        assertEquals(10.0, samples.get(1).value);
             
     }
 
@@ -93,6 +98,8 @@ public class KafkaCollectorTest extends TestCase
         List<MyCollector.MetricFamilySamples> mfsList = collector.collect(getDate);
         MyCollector.MetricFamilySamples mfs = mfsList.get(0);
         List<MyCollector.MetricFamilySamples.Sample> samples = mfs.samples;
+
+
 
         assertEquals(1, samples.size());
         assertEquals(jsonRecord.getTags(), MetricUtil.getLabelMapFromSample(samples.get(0)));

@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 
 public class MyTextFormat {
   /**
@@ -19,7 +20,13 @@ public class MyTextFormat {
     for (MyCollector.MetricFamilySamples metricFamilySamples: Collections.list(mfs)) {
       writer.write("# HELP " + metricFamilySamples.name + " " + escapeHelp(metricFamilySamples.help) + "\n");
       writer.write("# TYPE " + metricFamilySamples.name + " " + typeString(metricFamilySamples.type) + "\n");
-      for (MyCollector.MetricFamilySamples.Sample sample: metricFamilySamples.samples) {
+
+      List<MyCollector.MetricFamilySamples.Sample> sorted_samples = metricFamilySamples.samples;
+      Collections.sort(sorted_samples, (left, right) -> (
+              (left.timestamp < right.timestamp) ? -1 : ( (left.timestamp > right.timestamp) ? 1 : 0 )
+      ));
+
+      for (MyCollector.MetricFamilySamples.Sample sample: sorted_samples) {
         writer.write(sample.name);
         if (sample.labelNames.size() > 0) {
           writer.write("{");
