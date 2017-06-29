@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class MetricUtil {
-    public static Map<String, String> getLabelMapFromSample(Collector.MetricFamilySamples.Sample sample)  {
+    public static Map<String, String> getLabelMapFromSample(MyCollector.MetricFamilySamples.Sample sample)  {
         Map<String, String> ret = new HashMap();
         
         for (int i = 0; i < sample.labelNames.size() && i < sample.labelValues.size(); i++) {

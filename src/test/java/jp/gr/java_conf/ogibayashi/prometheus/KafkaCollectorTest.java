@@ -23,8 +23,8 @@ public class KafkaCollectorTest extends TestCase
         final String topic = "test.hoge";
 
         collector.add(topic, logRecord);
-        List<MetricFamilySamples> mfsList = collector.collect();
-        MetricFamilySamples mfs = mfsList.get(0);
+        List<MyCollector.MetricFamilySamples> mfsList = collector.collect();
+        MyCollector.MetricFamilySamples mfs = mfsList.get(0);
         
         assertEquals("test_hoge_foo", mfs.name);
         assertEquals(Collector.Type.GAUGE, mfs.type);
@@ -39,14 +39,14 @@ public class KafkaCollectorTest extends TestCase
         KafkaExporterLogEntry jsonRecord = mapper.readValue(logRecord, KafkaExporterLogEntry.class);
         
         collector.add(topic, logRecord);
-        List<MetricFamilySamples> mfsList = collector.collect();
-        MetricFamilySamples mfs = mfsList.get(0);
+        List<MyCollector.MetricFamilySamples> mfsList = collector.collect();
+        MyCollector.MetricFamilySamples mfs = mfsList.get(0);
         Map<String, String> labelMap = MetricUtil.getLabelMapFromSample(mfs.samples.get(0));
         
         assertEquals("test_hoge_foo", mfs.name);
         assertEquals(Collector.Type.GAUGE, mfs.type);
         assertEquals("", mfs.help);
-        assertEquals(jsonRecord.getLabels(), labelMap);
+        assertEquals(jsonRecord.getTags(), labelMap);
         assertEquals(9.0, mfs.samples.get(0).value);
     }
     
@@ -63,12 +63,12 @@ public class KafkaCollectorTest extends TestCase
         collector.add(topic, logRecord1);
         collector.add(topic, logRecord2);
         collector.add(topic, logRecord3);
-        List<MetricFamilySamples> mfsList = collector.collect();
-        MetricFamilySamples mfs = mfsList.get(0);
-        List<MetricFamilySamples.Sample> samples = mfs.samples;
+        List<MyCollector.MetricFamilySamples> mfsList = collector.collect();
+        MyCollector.MetricFamilySamples mfs = mfsList.get(0);
+        List<MyCollector.MetricFamilySamples.Sample> samples = mfs.samples;
 
         assertEquals(2, samples.size());
-        assertEquals(jsonRecord.getLabels(), MetricUtil.getLabelMapFromSample(samples.get(1)));
+        assertEquals(jsonRecord.getTags(), MetricUtil.getLabelMapFromSample(samples.get(1)));
         assertEquals(18.0, samples.get(1).value);
             
     }
@@ -90,12 +90,12 @@ public class KafkaCollectorTest extends TestCase
         collector.add(topic, logRecord1, setDate1);
         collector.add(topic, logRecord2, setDate2);
 
-        List<MetricFamilySamples> mfsList = collector.collect(getDate);
-        MetricFamilySamples mfs = mfsList.get(0);
-        List<MetricFamilySamples.Sample> samples = mfs.samples;
+        List<MyCollector.MetricFamilySamples> mfsList = collector.collect(getDate);
+        MyCollector.MetricFamilySamples mfs = mfsList.get(0);
+        List<MyCollector.MetricFamilySamples.Sample> samples = mfs.samples;
 
         assertEquals(1, samples.size());
-        assertEquals(jsonRecord.getLabels(), MetricUtil.getLabelMapFromSample(samples.get(0)));
+        assertEquals(jsonRecord.getTags(), MetricUtil.getLabelMapFromSample(samples.get(0)));
         assertEquals(10.0, samples.get(0).value);
     }
     

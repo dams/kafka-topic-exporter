@@ -3,7 +3,7 @@ package jp.gr.java_conf.ogibayashi.prometheus;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Summary;
 
-import io.prometheus.client.exporter.MetricsServlet;
+// import io.prometheus.client.exporter.MetricsServlet;
 import io.prometheus.client.hotspot.StandardExports;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -32,7 +32,7 @@ public class KafkaTopicExporter {
         ServletContextHandler context = new ServletContextHandler();
         context.setContextPath("/");
         server.setHandler(context);
-        context.addServlet(new ServletHolder(new MetricsServlet()), "/metrics");
+        context.addServlet(new ServletHolder(new MyMetricsServlet()), "/metrics");
         
        
         ExecutorService executor = Executors.newSingleThreadExecutor();
