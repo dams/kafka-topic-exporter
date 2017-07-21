@@ -19,7 +19,7 @@ public class KafkaCollectorTest extends TestCase
     
     public void testAddSimpleMetric() {
         KafkaCollector collector = new KafkaCollector(emptyConfig);
-        final String logRecord = "{\"name\":\"foo\", \"value\": 9}";
+        final String logRecord = "{\"name\":\"foo\", \"fields\": { \"value\": 9 } }";
         final String topic = "test.hoge";
 
         collector.add(topic, logRecord);
@@ -34,7 +34,8 @@ public class KafkaCollectorTest extends TestCase
     
     public void testAddMetricWithLabel() throws IOException {
         KafkaCollector collector = new KafkaCollector(emptyConfig);
-        final String logRecord = "{\"name\":\"foo\", \"labels\": { \"label1\": \"v1\", \"lable2\": \"v2\" }, \"value\": 9}";
+        final String logRecord = "{\"name\":\"foo\", \"tags\": { \"label1\": \"v1\", \"lable2\": \"v2\" }, \"fields\": { \"value\": 9 } }";
+
         final String topic = "test.hoge";
         KafkaExporterLogEntry jsonRecord = mapper.readValue(logRecord, KafkaExporterLogEntry.class);
         
@@ -46,16 +47,16 @@ public class KafkaCollectorTest extends TestCase
         assertEquals("test_hoge_foo", mfs.name);
         assertEquals(Collector.Type.GAUGE, mfs.type);
         assertEquals("", mfs.help);
-        assertEquals(jsonRecord.getLabels(), labelMap);
+        assertEquals(jsonRecord.getTags(), labelMap);
         assertEquals(9.0, mfs.samples.get(0).value);
     }
     
     public void testReplaceValueWithSameLabel() throws IOException {
         KafkaCollector collector = new KafkaCollector(emptyConfig);
 
-        final String logRecord1 = "{\"name\":\"foo\", \"labels\": { \"label1\": \"v1\", \"lable2\": \"v2\" }, \"value\": 9}";
-        final String logRecord2 = "{\"name\":\"foo\", \"labels\": { \"label1\": \"aa1\", \"lable2\": \"bb2\" }, \"value\": 10}";
-        final String logRecord3 = "{\"name\":\"foo\", \"labels\": { \"label1\": \"v1\", \"lable2\": \"v2\" }, \"value\": 18}";
+        final String logRecord1 = "{\"name\":\"foo\", \"tags\": { \"label1\": \"v1\", \"lable2\": \"v2\" }, \"fields\": { \"value\": 9 } }";
+        final String logRecord2 = "{\"name\":\"foo\", \"tags\": { \"label1\": \"aa1\", \"lable2\": \"bb2\" }, \"fields\": { \"value\": 10 } }";
+        final String logRecord3 = "{\"name\":\"foo\", \"tags\": { \"label1\": \"v1\", \"lable2\": \"v2\" }, \"fields\": { \"value\": 18 } }";
 
         final String topic = "test.hoge";
         KafkaExporterLogEntry jsonRecord = mapper.readValue(logRecord3, KafkaExporterLogEntry.class);
@@ -68,7 +69,7 @@ public class KafkaCollectorTest extends TestCase
         List<MetricFamilySamples.Sample> samples = mfs.samples;
 
         assertEquals(2, samples.size());
-        assertEquals(jsonRecord.getLabels(), MetricUtil.getLabelMapFromSample(samples.get(1)));
+        assertEquals(jsonRecord.getTags(), MetricUtil.getLabelMapFromSample(samples.get(1)));
         assertEquals(18.0, samples.get(1).value);
             
     }
@@ -82,8 +83,8 @@ public class KafkaCollectorTest extends TestCase
         LocalDateTime setDate2 = LocalDateTime.of(2016, 9, 20, 10, 9);
         LocalDateTime getDate = LocalDateTime.of(2016, 9, 20, 10, 10);
 
-        final String logRecord1 = "{\"name\":\"foo\", \"labels\": { \"label1\": \"v1\", \"lable2\": \"v2\" }, \"value\": 9}";
-        final String logRecord2 = "{\"name\":\"foo\", \"labels\": { \"label1\": \"aa1\", \"lable2\": \"bb2\" }, \"value\": 10}";
+        final String logRecord1 = "{\"name\":\"foo\", \"tags\": { \"label1\": \"v1\", \"lable2\": \"v2\" }, \"fields\": { \"value\": 9 } }";
+        final String logRecord2 = "{\"name\":\"foo\", \"tags\": { \"label1\": \"aa1\", \"lable2\": \"bb2\" }, \"fields\": { \"value\": 10 } }";
         final String topic = "test.hoge";
         KafkaExporterLogEntry jsonRecord = mapper.readValue(logRecord2, KafkaExporterLogEntry.class);
 
@@ -95,7 +96,7 @@ public class KafkaCollectorTest extends TestCase
         List<MetricFamilySamples.Sample> samples = mfs.samples;
 
         assertEquals(1, samples.size());
-        assertEquals(jsonRecord.getLabels(), MetricUtil.getLabelMapFromSample(samples.get(0)));
+        assertEquals(jsonRecord.getTags(), MetricUtil.getLabelMapFromSample(samples.get(0)));
         assertEquals(10.0, samples.get(0).value);
     }
     

@@ -37,7 +37,9 @@ public class KafkaCollector extends Collector {
         LOG.debug("add: {}, {}", topic, recordValue);
         try {          
             KafkaExporterLogEntry record = mapper.readValue(recordValue, KafkaExporterLogEntry.class);
-            String metricName = topic.replaceAll("\\.","_") + "_" + record.getName();
+            // String metricName = topic.replaceAll("\\.","_") + "_" + record.getName();
+            // Don't use topic + record name as metric name, only record name.
+            String metricName = record.getName();
             if(! metricEntries.containsKey(metricName)){
                 metricEntries.put(metricName, new HashMap());
             }
@@ -73,7 +75,11 @@ public class KafkaCollector extends Collector {
                     }
                 }
                 else {
-                    samples.add(generateSample(e.getKey(), le.getKey()));
+                    List<MetricFamilySamples.Sample> samplesFromEntry = generateSample(e.getKey(), le.getKey());
+                    for(MetricFamilySamples.Sample sample: samplesFromEntry) {
+                        samples.add(sample);
+                    }
+                    //samples.add(generateSample(e.getKey(), le.getKey()));
                 }
             }
             mfsList.add(new MetricFamilySamples(e.getKey(), Type.GAUGE, "", samples));
@@ -82,15 +88,23 @@ public class KafkaCollector extends Collector {
         return mfsList;
     }
 
-    public MetricFamilySamples.Sample generateSample(String metricName, KafkaExporterLogEntry logEntry) {
+    public List<MetricFamilySamples.Sample> generateSample(String metricName, KafkaExporterLogEntry logEntry) {
         ArrayList<String> labelNames = new ArrayList<String>();
         ArrayList<String> labelValues = new ArrayList<String>();
-        if (logEntry.getLabels() != null) {
-            for(Map.Entry<String, String> entry: logEntry.getLabels().entrySet()){
+        if (logEntry.getTags() != null) {
+            for(Map.Entry<String, String> entry: logEntry.getTags().entrySet()){
                 labelNames.add(entry.getKey());
                 labelValues.add(entry.getValue());
             }
         }
-        return new MetricFamilySamples.Sample(metricName, labelNames, labelValues, logEntry.getValue());
+//        return new MetricFamilySamples.Sample(metricName, labelNames, labelValues, logEntry.getValue());
+        List<MetricFamilySamples.Sample> samples = new ArrayList();
+        for(Map.Entry<String,Double> field: logEntry.getFields().entrySet()) {
+            samples.add(new MetricFamilySamples.Sample(
+                    metricName + "_" + field.getKey(),
+                    labelNames, labelValues, field.getValue()));
+        }
+        LOG.info("samples: {}", samples );
+        return samples;
     }
 }
